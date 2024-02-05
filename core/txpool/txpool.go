@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/experiment-1/utils"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 )
@@ -317,6 +318,19 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 	// so we can piece back the returned errors into the original order.
 	txsets := make([][]*types.Transaction, len(p.subpools))
 	splits := make([]int, len(txs))
+
+	if local {
+		for _, tx := range txs {
+			// Use the RecordTransaction function from the utils package
+			err := utils.RecordTransaction(tx, "../../data/transactionLogFile.log")
+			if err != nil {
+				log.Error("Failed to record transaction", "err", err)
+			} else {
+				// If you only want to log the first transaction, break after logging
+				break
+			}
+		}
+	}
 
 	for i, tx := range txs {
 		// Mark this transaction belonging to no-subpool
