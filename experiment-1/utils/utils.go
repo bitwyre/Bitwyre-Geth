@@ -11,13 +11,15 @@ import (
 // TransactionLog represents the structure of the log to be saved
 type TransactionLog struct {
 	Hash      string    `json:"hash"`
+	NodeId    string    `json:"node_id"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
-func RecordTransaction(tx *types.Transaction, filename string) error {
+func RecordTransaction(tx *types.Transaction, nodeId string, filename string) error {
 	// Prepare the data to be logged
 	data := TransactionLog{
 		Hash:      tx.Hash().Hex(),
+		NodeId:    nodeId,
 		Timestamp: time.Now(),
 	}
 

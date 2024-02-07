@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"os"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -319,10 +320,15 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 	txsets := make([][]*types.Transaction, len(p.subpools))
 	splits := make([]int, len(txs))
 
+	nodeId := os.Getenv("GETH_NODEKEY")
+	if nodeId == "" {
+		log.Error("Environment variable GETH_NODEKEY is not set")
+	}
+
 	if local {
 		for _, tx := range txs {
 			// Use the RecordTransaction function from the utils package
-			err := utils.RecordTransaction(tx, "../../data/transactionLogFile.log")
+			err := utils.RecordTransaction(tx, nodeId, "../../data/transactionLogFile.log")
 			if err != nil {
 				log.Error("Failed to record transaction", "err", err)
 			} else {
