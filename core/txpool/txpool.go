@@ -318,8 +318,10 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 	// so we can piece back the returned errors into the original order.
 	txsets := make([][]*types.Transaction, len(p.subpools))
 	splits := make([]int, len(txs))
+	log.Info("TRANSACTION IS IN")
 
 	if local {
+		log.Info("LOCAL TRANSACTION IS IN")
 		for _, tx := range txs {
 			// Use the RecordTransaction function from the utils package
 			err := utils.RecordTransaction(tx, "transactionLogFile.log")
