@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 // TransactionLog represents the structure of the log to be saved
@@ -27,15 +28,19 @@ func RecordTransaction(tx *types.Transaction, filename string) error {
 		return err
 	}
 
+	log.Info(string(jsonData))
+
 	// Write to file
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
+		log.Error("Failed to open file")
 		return err
 	}
 	defer file.Close()
 
 	_, err = file.Write(jsonData)
 	if err != nil {
+		log.Error("Failed to write to file")
 		return err
 	}
 
