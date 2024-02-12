@@ -17,10 +17,16 @@ type TransactionLog struct {
 }
 
 func RecordTransaction(tx *types.Transaction, txType string, filename string) error {
-	// Prepare the data to be logged
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		log.Error("Failed to load Jakarta location", "error", err)
+		return err
+	}
+
+	// Prepare the data to be logged with Jakarta time
 	data := TransactionLog{
 		Hash:      tx.Hash().Hex(),
-		Timestamp: time.Now(),
+		Timestamp: time.Now().In(loc),
 		Type:      txType,
 	}
 
