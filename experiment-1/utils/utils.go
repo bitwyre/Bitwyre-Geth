@@ -13,13 +13,15 @@ import (
 type TransactionLog struct {
 	Hash      string    `json:"hash"`
 	Timestamp time.Time `json:"timestamp"`
+	Type      string    `json:"type"`
 }
 
-func RecordTransaction(tx *types.Transaction, filename string) error {
+func RecordTransaction(tx *types.Transaction, txType string, filename string) error {
 	// Prepare the data to be logged
 	data := TransactionLog{
 		Hash:      tx.Hash().Hex(),
 		Timestamp: time.Now(),
+		Type:      txType,
 	}
 
 	// Marshal data to JSON format

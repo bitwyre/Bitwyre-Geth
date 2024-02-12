@@ -320,23 +320,25 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 	splits := make([]int, len(txs))
 	log.Info("TRANSACTION IS IN")
 
-	if local {
-		log.Info("LOCAL TRANSACTION IS IN")
-		for _, tx := range txs {
-			// Use the RecordTransaction function from the utils package
-			err := utils.RecordTransaction(tx, "/root/transactionLogFile.log")
-			if err != nil {
-				log.Error("Failed to record transaction", "err", err)
-			} else {
-				// If you only want to log the first transaction, break after logging
-				break
-			}
-		}
-	}
+	filename := "/root/transactionPeerFile.log"
 
 	for i, tx := range txs {
 		// Mark this transaction belonging to no-subpool
 		splits[i] = -1
+
+		txType := "NETWORK" // Assume transaction is from the network by default
+
+		if local {
+			txType = "LOCAL" // Mark transaction as local if it's submitted locally
+			filename = "/root/transactionLogFile.log"
+		}
+
+		// Log the transaction with the type and Jakarta timestamp
+		err := utils.RecordTransaction(tx, txType, filename)
+		if err != nil {
+			log.Error("Failed to record transaction", "hash", tx.Hash().Hex(), "error", err)
+			// Optionally handle the error, such as breaking the loop or continuing
+		}
 
 		// Try to find a subpool that accepts the transaction
 		for j, subpool := range p.subpools {
