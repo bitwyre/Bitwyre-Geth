@@ -6,8 +6,8 @@ datasources:
     access: proxy
     url: http://influxdb:8086
     jsonData:
-     version: SQL
+      version: SQL
       metadata:
         - database: my_bucket
     secureJsonData:
-       httpHeaderValue1: 'Token my_token'
+      httpHeaderValue1: "Token my_token"
