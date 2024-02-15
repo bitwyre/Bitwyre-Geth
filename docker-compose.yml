@@ -65,22 +65,22 @@ services:
       - ./data/lighthouse:/root/.lighthouse
       - ./jwtsecret:/jwtsecret
 
-  # grafana:
-  #   image: grafana/grafana:latest
-  #   container_name: grafana
-  #   depends_on:
-  #     - influxdb
-  #   ports:
-  #     - "3000:3000"
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - grafana_data:/var/lib/grafana
-  #     - ./provisioning/datasources:/etc/grafana/provisioning/datasources
-  #   environment:
-  #     - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG}
-  #     - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET}
-  #     - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    depends_on:
+      - influxdb
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./provisioning/datasources:/etc/grafana/provisioning/datasources
+    environment:
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
 
   influxdb:
     image: influxdb:latest
@@ -97,5 +97,5 @@ services:
       - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET}
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
 volumes:
-  # grafana_data:
+  grafana_data:
   influxdb_data:
