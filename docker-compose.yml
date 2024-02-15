@@ -16,6 +16,12 @@ services:
       --authrpc.addr=0.0.0.0
       --authrpc.vhosts=*
       --cache 8000
+      --metrics
+      --metrics.influxdbv2
+      --metrics.influxdb.endpoint "http://influxdb:8086"
+      --metrics.influxdb.token "my_token"
+      --metrics.influxdb.bucket "my_bucket"
+      --metrics.influxdb.organization "my_org"
       --syncmode snap
     ports:
       - 30303:30303
