@@ -17,11 +17,10 @@ services:
       --authrpc.vhosts=*
       --cache 8000
       --metrics
-      --metrics.influxdbv2
+      --metrics.influxdb
       --metrics.influxdb.endpoint "http://influxdb:8086"
-      --metrics.influxdb.token "my_token"
-      --metrics.influxdb.bucket "my_bucket"
-      --metrics.influxdb.organization "my_org"
+      --metrics.influxdb.username "geth" 
+      --metrics.influxdb.password "mypassword"
       --syncmode snap
     ports:
       - 30303:30303
@@ -72,30 +71,25 @@ services:
       - influxdb
     ports:
       - "3000:3000"
-    env_file:
-      - .env
     volumes:
       - grafana_data:/var/lib/grafana
       - ./provisioning/datasources:/etc/grafana/provisioning/datasources
-    environment:
-      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG}
-      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET}
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
 
   influxdb:
-    image: influxdb:latest
+    image: influxdb:1.7.1
     container_name: influxdb
     ports:
       - "8086:8086"
     volumes:
       - influxdb_data:/var/lib/influxdb2
     environment:
-      - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_USERNAME}
-      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_PASSWORD}
-      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG}
-      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET}
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
+      - INFLUXDB_ADMIN_ENABLED=true
+      - INFLUXDB_ADMIN_USER=${INFLUXDB_ADMIN_USERNAME}
+      - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_ADMIN_PASSWORD}
+      - INFLUXDB_DB=geth
+      - INFLUXDB_REPORTING_DISABLED=true
+      - INFLUXDB_USER=${INFLUXDB_USERNAME}
+      - INFLUXDB_USER_PASSWORD=${INFLUXDB_PASSWORD}
 volumes:
   grafana_data:
   influxdb_data:

@@ -1,13 +1,13 @@
 apiVersion: 1
 
 datasources:
-  - name: InfluxDBV2
+  - name: InfluxDB_v1
     type: influxdb
     access: proxy
+    user: grafana
     url: http://influxdb:8086
     jsonData:
-      version: SQL
-      metadata:
-        - database: my_bucket
+      dbName: geth
+      httpMode: GET
     secureJsonData:
-      httpHeaderValue1: "Token my_token"
+      password: mypassword
