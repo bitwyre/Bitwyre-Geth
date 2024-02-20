@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/experiment-1/utils"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 )
@@ -317,10 +318,27 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 	// so we can piece back the returned errors into the original order.
 	txsets := make([][]*types.Transaction, len(p.subpools))
 	splits := make([]int, len(txs))
+	log.Info("TRANSACTION IS IN")
+
+	filename := "/root/transactionPeerFile.log"
 
 	for i, tx := range txs {
 		// Mark this transaction belonging to no-subpool
 		splits[i] = -1
+
+		txType := "NETWORK" // Assume transaction is from the network by default
+
+		if local {
+			txType = "LOCAL" // Mark transaction as local if it's submitted locally
+			filename = "/root/transactionLogFile.log"
+		}
+
+		// Log the transaction with the type and Jakarta timestamp
+		err := utils.RecordTransaction(tx, txType, filename)
+		if err != nil {
+			log.Error("Failed to record transaction", "hash", tx.Hash().Hex(), "error", err)
+			// Optionally handle the error, such as breaking the loop or continuing
+		}
 
 		// Try to find a subpool that accepts the transaction
 		for j, subpool := range p.subpools {
