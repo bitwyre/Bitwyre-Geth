@@ -30,8 +30,6 @@ func RecordTransaction(tx *types.Transaction, txType string, filename string) er
 		return err
 	}
 
-	log.Info(string(jsonData))
-
 	// Write to file
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
