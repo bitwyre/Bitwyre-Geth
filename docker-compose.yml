@@ -15,6 +15,8 @@ services:
       --authrpc.port 8551
       --authrpc.addr=0.0.0.0
       --authrpc.vhosts=*
+      --nodiscover
+      --config config.toml
       --cache 8000
       --metrics
       --metrics.influxdb
@@ -28,6 +30,7 @@ services:
       - 8551:8551
     volumes:
       - ./data/ethereum:/root/.ethereum
+      - ./config.toml:/config.toml
       # ETH2 beacon chain node secret file for AuthRPC.
       # Share with your beacon client.
       # Generate this file: openssl rand -hex 32 > jwtsecret
