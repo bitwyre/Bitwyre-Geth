@@ -15,14 +15,13 @@ services:
       --authrpc.port 8551
       --authrpc.addr=0.0.0.0
       --authrpc.vhosts=*
-      --discovery.v4="false"
       --verbosity 5
       --config /config/config.toml
       --cache 8000
       --metrics
       --metrics.influxdb
       --metrics.influxdb.endpoint "http://influxdb:8086"
-      --metrics.influxdb.username "geth" 
+      --metrics.influxdb.username "geth"
       --metrics.influxdb.password "mypassword"
       --syncmode snap
     ports:
