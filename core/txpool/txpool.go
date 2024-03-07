@@ -342,7 +342,7 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 	for i, tx := range txs {
 		doc := bson.D{{"hash", tx.Hash().Hex()}, {"timestamp", time.Now()}, {"data", tx}}
 		if _, err := collection.InsertOne(context.Background(), doc); err != nil {
-			fmt.Println("Error when insert lol")
+			fmt.Println("Error when insert lol:", err)
 			log.Error("Failed to insert transaction into MongoDB", "hash", tx.Hash().Hex(), "error", err)
 			// Decide how to handle MongoDB insertion errors; for now, just logging
 		}
