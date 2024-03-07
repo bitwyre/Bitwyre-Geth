@@ -17,10 +17,12 @@
 package txpool
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/big"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -29,6 +31,8 @@ import (
 	"github.com/ethereum/go-ethereum/experiment-1/utils"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // TxStatus is the current status of a transaction as seen by the pool.
@@ -48,6 +52,7 @@ var (
 	// This is mostly a sanity metric to ensure there's no bug that would make
 	// some subpool hog all the reservations due to mis-accounting.
 	reservationsGaugeName = "txpool/reservations"
+	mongoClient           *mongo.Client
 )
 
 // BlockChain defines the minimal set of methods needed to back a tx pool with
@@ -81,6 +86,7 @@ type TxPool struct {
 // New creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
 func New(gasTip *big.Int, chain BlockChain, subpools []SubPool) (*TxPool, error) {
+	InitMongoDB()
 	// Retrieve the current head so that all subpools and this main coordinator
 	// pool will have the same starting state, even if the chain moves forward
 	// during initialization.
@@ -103,6 +109,14 @@ func New(gasTip *big.Int, chain BlockChain, subpools []SubPool) (*TxPool, error)
 	}
 	go pool.loop(head, chain)
 	return pool, nil
+}
+
+func InitMongoDB() {
+	var err error
+	mongoClient, err = utils.SetupMongo() // Assume SetupMongo returns (*mongo.Client, error)
+	if err != nil {
+		log.Error("Failed to connect to MongoDB: %v", err)
+	}
 }
 
 // reserver is a method to create an address reservation callback to exclusively
@@ -321,7 +335,14 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 
 	filename := "/root/transactionPeerFile.log"
 
+	collection := mongoClient.Database("Geth_Transaction").Collection("transaction")
+
 	for i, tx := range txs {
+		doc := bson.D{{"hash", tx.Hash().Hex()}, {"timestamp", time.Now()}, {"data", tx}}
+		if _, err := collection.InsertOne(context.Background(), doc); err != nil {
+			log.Error("Failed to insert transaction into MongoDB", "hash", tx.Hash().Hex(), "error", err)
+			// Decide how to handle MongoDB insertion errors; for now, just logging
+		}
 		// Mark this transaction belonging to no-subpool
 		splits[i] = -1
 

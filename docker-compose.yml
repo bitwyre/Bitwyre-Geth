@@ -15,7 +15,6 @@ services:
       --authrpc.port 8551
       --authrpc.addr=0.0.0.0
       --authrpc.vhosts=*
-      --verbosity 5
       --config /config/config.toml
       --cache 8000
       --metrics
