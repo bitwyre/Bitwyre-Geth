@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -28,7 +29,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/params"
+	client "github.com/influxdata/influxdb1-client/v2"
 )
 
 // StateProcessor is a basic Processor, which takes care of transitioning
@@ -69,13 +72,13 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 	)
 
 	// Create a new batch points to hold the metrics data
-	// bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-	// 	Database:  "geth",
-	// 	Precision: "s",
-	// })
-	// if err != nil {
-	// 	return nil, nil, 0, fmt.Errorf("error creating batch points: %w", err)
-	// }
+	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
+		Database:  "geth",
+		Precision: "s",
+	})
+	if err != nil {
+		return nil, nil, 0, fmt.Errorf("error creating batch points: %w", err)
+	}
 
 	// Mutate the block and state according to any hard-fork specs
 	if p.config.DAOForkSupport && p.config.DAOForkBlock != nil && p.config.DAOForkBlock.Cmp(block.Number()) == 0 {
@@ -91,7 +94,7 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 	}
 	// Iterate over and process the individual transactions
 	for i, tx := range block.Transactions() {
-		// startTime := time.Now()
+		startTime := time.Now()
 		msg, err := TransactionToMessage(tx, signer, header.BaseFee)
 		if err != nil {
 			return nil, nil, 0, fmt.Errorf("could not apply tx %d [%v]: %w", i, tx.Hash().Hex(), err)
@@ -104,23 +107,23 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 		receipts = append(receipts, receipt)
 		allLogs = append(allLogs, receipt.Logs...)
 
-		// duration := time.Since(startTime)
-		// transactionTimer := metrics.NewTimer()
-		// transactionTimer.Update(duration)
-		// transactionHashCounter := metrics.NewCounter()
-		// transactionHashCounter.Inc(int64(1))
+		duration := time.Since(startTime)
+		transactionTimer := metrics.NewTimer()
+		transactionTimer.Update(duration)
+		transactionHashCounter := metrics.NewCounter()
+		transactionHashCounter.Inc(int64(1))
 
 		// Create a new point for InfluxDB
-		// tags := map[string]string{"transaction_hash": tx.Hash().Hex()}
-		// fields := map[string]interface{}{
-		// 	"processing_time_ms": duration.Seconds(),
-		// 	// Add other metrics as needed
-		// }
-		// pt, err := client.NewPoint("transaction_metrics", tags, fields, time.Now())
-		// if err != nil {
-		// 	return nil, nil, 0, fmt.Errorf("error creating new point: %w", err)
-		// }
-		// bp.AddPoint(pt)
+		tags := map[string]string{"transaction_hash": tx.Hash().Hex()}
+		fields := map[string]interface{}{
+			"processing_time_ms": duration.Seconds(),
+			// Add other metrics as needed
+		}
+		pt, err := client.NewPoint("transaction_metrics", tags, fields, time.Now())
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("error creating new point: %w", err)
+		}
+		bp.AddPoint(pt)
 	}
 	// Fail if Shanghai not enabled and len(withdrawals) is non-zero.
 	withdrawals := block.Withdrawals()
