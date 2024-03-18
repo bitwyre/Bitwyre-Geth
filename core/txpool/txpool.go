@@ -320,6 +320,8 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 	txsets := make([][]*types.Transaction, len(p.subpools))
 	splits := make([]int, len(txs))
 
+	log.Info("Add Function is Called")
+
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  "geth",
 		Precision: "s",
@@ -351,6 +353,7 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 			// Continue processing other transactions without stopping.
 			continue
 		}
+		log.Info("The data is send")
 		bp.AddPoint(pt)
 
 		// Try to find a subpool that accepts the transaction
