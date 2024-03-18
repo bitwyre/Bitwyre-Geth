@@ -49,6 +49,7 @@ var (
 	// This is mostly a sanity metric to ensure there's no bug that would make
 	// some subpool hog all the reservations due to mis-accounting.
 	reservationsGaugeName = "txpool/reservations"
+	clients               client.Client
 )
 
 // BlockChain defines the minimal set of methods needed to back a tx pool with
@@ -365,6 +366,12 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 			}
 		}
 	}
+
+	if err := clients.Write(bp); err != nil {
+		log.Error("Failed to write batch points to InfluxDB", "err", err)
+		// Handle the error appropriately
+	}
+
 	// Add the transactions split apart to the individual subpools and piece
 	// back the errors into the original sort order.
 	errsets := make([][]error, len(p.subpools))
