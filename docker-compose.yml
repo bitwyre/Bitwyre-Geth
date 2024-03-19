@@ -49,7 +49,7 @@ services:
       lighthouse
       bn
        --network
-       sepolia
+       mainnet
        --http
        --http-address=0.0.0.0
        --http-port=5052
