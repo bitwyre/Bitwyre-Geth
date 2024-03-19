@@ -21,15 +21,14 @@ import (
 	"fmt"
 	"math/big"
 	"sync"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/experiment-1/utils"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
-	client "github.com/influxdata/influxdb1-client/v2"
 )
 
 // TxStatus is the current status of a transaction as seen by the pool.
@@ -49,7 +48,6 @@ var (
 	// This is mostly a sanity metric to ensure there's no bug that would make
 	// some subpool hog all the reservations due to mis-accounting.
 	reservationsGaugeName = "txpool/reservations"
-	clients               client.Client
 )
 
 // BlockChain defines the minimal set of methods needed to back a tx pool with
@@ -322,42 +320,9 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 	splits := make([]int, len(txs))
 
 	log.Info("Add Function is Called")
-
-	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-		Database:  "geth",
-		Precision: "s",
-	})
-	if err != nil {
-		log.Error("error creating batch points: %w", err)
-		// Corrected to return nil for the batch points and the error
-		return nil
-	}
-
 	for i, tx := range txs {
-		// Your existing logic to handle transactions...
-		// Simplified for clarity. Keep your existing transaction handling as is.
-
-		txHash := tx.Hash().Hex() // Get the transaction hash as a hex string.
-		currentTime := time.Now() // Current time when the transaction is being processed.
-
-		// Create tags and fields for the InfluxDB point.
-		tags := map[string]string{"transaction_hash": txHash}
-		fields := map[string]interface{}{
-			"recorded_at": currentTime.Unix(), // Saving the timestamp as Unix time for simplicity.
-		}
-
-		// Create a new point with the transaction metrics and add it to the batch.
-		pt, err := client.NewPoint("transaction_metrics", tags, fields, currentTime)
-		if err != nil {
-			log.Error("error creating new point for InfluxDB", "err", err)
-			// Decide how you want to handle this error. For simplicity, you might just log it.
-			// Continue processing other transactions without stopping.
-			continue
-		}
-		log.Info("The data is send")
-		bp.AddPoint(pt)
-
 		// Try to find a subpool that accepts the transaction
+		utils.SaveToInflux(tx)
 		for j, subpool := range p.subpools {
 			if subpool.Filter(tx) {
 				txsets[j] = append(txsets[j], tx)
@@ -365,11 +330,6 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 				break
 			}
 		}
-	}
-
-	if err := clients.Write(bp); err != nil {
-		log.Error("Failed to write batch points to InfluxDB", "err", err)
-		// Handle the error appropriately
 	}
 
 	// Add the transactions split apart to the individual subpools and piece

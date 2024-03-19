@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"os"
 	"time"
-
+ 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	client "github.com/influxdata/influxdb1-client/v2"
 )
 
 // TransactionLog represents the structure of the log to be saved
@@ -47,4 +48,50 @@ func RecordTransaction(tx *types.Transaction, txType string, filename string) er
 	// Write a newline for readability if logging multiple entries
 	_, err = file.WriteString("\n")
 	return err
+}
+
+
+func SaveToInflux(tx *types.Transaction) {
+
+	c, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr: "http://127.0.0.1:8086",
+		Username: "",
+		Password: "",
+		Timeout:  10 * time.Second,
+	})
+	if err != nil {
+		log.Info("Error creating InfluxDB Client: ", err.Error())
+	}
+	defer c.Close()
+
+	bp , err2 := client.NewBatchPoints(client.BatchPointsConfig{
+		Database:  "bitwyre",
+		Precision: "s",
+	})
+
+	if err2 != nil {
+		log.Error("error creating batch points: %w", err2)
+		return
+	}
+
+	txHash := tx.Hash().Hex()
+	currentTime := time.Now()
+
+	log.Info("Attempt to write transaction with hash: ", txHash, nil)
+
+	tags := map[string]string{"transaction_hash": txHash}
+	fields := map[string]interface{}{
+		"recorded_at": currentTime.Unix(),
+	}
+
+	pt, err := client.NewPoint("transaction_metrics", tags, fields, currentTime)
+	if err != nil {
+		log.Error("error creating new point for InfluxDB", "err", err)
+	}
+	log.Info("The data is send")
+	bp.AddPoint(pt)
+
+	if err := c.Write(bp); err != nil {
+		log.Error("Failed to write batch points to InfluxDB", "err", err)
+	}
 }
