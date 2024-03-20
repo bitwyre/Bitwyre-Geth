@@ -360,7 +360,7 @@ func (p *BlobPool) Init(gasTip uint64, head *types.Header, reserve txpool.Addres
 		}
 	}
 	// Initialize the state with head block, or fallback to empty one in
-	// case the head state is not available(might occur when node is not
+	// case the head state is not available (might occur when node is not
 	// fully synced).
 	state, err := p.chain.StateAt(head.Root)
 	if err != nil {
@@ -371,7 +371,7 @@ func (p *BlobPool) Init(gasTip uint64, head *types.Header, reserve txpool.Addres
 	}
 	p.head, p.state = head, state
 
-	// Index all transactions on disk and delete anything inprocessable
+	// Index all transactions on disk and delete anything unprocessable
 	var fails []uint64
 	index := func(id uint64, size uint32, blob []byte) {
 		if p.parseTransaction(id, size, blob) != nil {
@@ -402,7 +402,7 @@ func (p *BlobPool) Init(gasTip uint64, head *types.Header, reserve txpool.Addres
 	}
 	var (
 		basefee = uint256.MustFromBig(eip1559.CalcBaseFee(p.chain.Config(), p.head))
-		blobfee = uint256.MustFromBig(big.NewInt(params.BlobTxMinBlobGasprice))
+		blobfee = uint256.NewInt(params.BlobTxMinBlobGasprice)
 	)
 	if p.head.ExcessBlobGas != nil {
 		blobfee = uint256.MustFromBig(eip4844.CalcBlobFee(*p.head.ExcessBlobGas))
@@ -540,7 +540,7 @@ func (p *BlobPool) recheck(addr common.Address, inclusions map[common.Hash]uint6
 		}
 		delete(p.index, addr)
 		delete(p.spent, addr)
-		if inclusions != nil { // only during reorgs will the heap will be initialized
+		if inclusions != nil { // only during reorgs will the heap be initialized
 			heap.Remove(p.evict, p.evict.index[addr])
 		}
 		p.reserve(addr, false)
@@ -693,7 +693,7 @@ func (p *BlobPool) recheck(addr common.Address, inclusions map[common.Hash]uint6
 		if len(txs) == 0 {
 			delete(p.index, addr)
 			delete(p.spent, addr)
-			if inclusions != nil { // only during reorgs will the heap will be initialized
+			if inclusions != nil { // only during reorgs will the heap be initialized
 				heap.Remove(p.evict, p.evict.index[addr])
 			}
 			p.reserve(addr, false)
@@ -809,7 +809,7 @@ func (p *BlobPool) Reset(oldHead, newHead *types.Header) {
 				}
 			}
 			// Recheck the account's pooled transactions to drop included and
-			// invalidated one
+			// invalidated ones
 			p.recheck(addr, inclusions)
 		}
 		if len(adds) > 0 {
@@ -1131,8 +1131,12 @@ func (p *BlobPool) validateTx(tx *types.Transaction) error {
 		next    = p.state.GetNonce(from)
 	)
 	if uint64(len(p.index[from])) > tx.Nonce()-next {
-		// Account can support the replacement, but the price bump must also be met
 		prev := p.index[from][int(tx.Nonce()-next)]
+		// Ensure the transaction is different than the one tracked locally
+		if prev.hash == tx.Hash() {
+			return txpool.ErrAlreadyKnown
+		}
+		// Account can support the replacement, but the price bump must also be met
 		switch {
 		case tx.GasFeeCapIntCmp(prev.execFeeCap.ToBig()) <= 0:
 			return fmt.Errorf("%w: new tx gas fee cap %v <= %v queued", txpool.ErrReplaceUnderpriced, tx.GasFeeCap(), prev.execFeeCap)
@@ -1226,7 +1230,7 @@ func (p *BlobPool) Add(txs []*types.Transaction, local bool, sync bool) []error 
 // consensus validity and pool restrictions).
 func (p *BlobPool) add(tx *types.Transaction) (err error) {
 	// The blob pool blocks on adding a transaction. This is because blob txs are
-	// only even pulled form the network, so this method will act as the overload
+	// only even pulled from the network, so this method will act as the overload
 	// protection for fetches.
 	waitStart := time.Now()
 	p.lock.Lock()
@@ -1554,7 +1558,7 @@ func (p *BlobPool) updateStorageMetrics() {
 }
 
 // updateLimboMetrics retrieves a bunch of stats from the limbo store and pushes
-// // them out as metrics.
+// them out as metrics.
 func (p *BlobPool) updateLimboMetrics() {
 	stats := p.limbo.store.Infos()
 
