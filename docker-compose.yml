@@ -8,7 +8,7 @@ services:
     env_file:
       - .env
     command: >
-      --sepolia
+      --mainnet
       --http
       --http.addr=0.0.0.0
       --authrpc.jwtsecret=/jwtsecret
@@ -49,13 +49,13 @@ services:
       lighthouse
       bn
        --network
-       sepolia
+       mainnet
        --http
        --http-address=0.0.0.0
        --http-port=5052
        --execution-endpoint=http://local:8551
        --execution-jwt=/jwtsecret
-       --checkpoint-sync-url=https://beaconstate-sepolia.chainsafe.io
+       --checkpoint-sync-url=https://beaconstate-mainnet.chainsafe.io
        --disable-deposit-contract-sync
     ports:
       - 5052:5052
