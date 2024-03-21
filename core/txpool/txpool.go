@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/experiment-1/utils"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 )
@@ -318,11 +319,10 @@ func (p *TxPool) Add(txs []*types.Transaction, local bool, sync bool) []error {
 	txsets := make([][]*types.Transaction, len(p.subpools))
 	splits := make([]int, len(txs))
 
+	log.Info("Add Function is Called")
 	for i, tx := range txs {
-		// Your existing logic to handle transactions...
-		// Simplified for clarity. Keep your existing transaction handling as is.
-
 		// Try to find a subpool that accepts the transaction
+		utils.SaveToInflux(tx)
 		for j, subpool := range p.subpools {
 			if subpool.Filter(tx) {
 				txsets[j] = append(txsets[j], tx)
