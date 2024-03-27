@@ -2,9 +2,12 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"time"
- 
+
+	"encoding/csv"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	client "github.com/influxdata/influxdb1-client/v2"
@@ -50,7 +53,6 @@ func RecordTransaction(tx *types.Transaction, txType string, filename string) er
 	return err
 }
 
-
 func SaveToInflux(tx *types.Transaction) {
 
 	c, err := client.NewHTTPClient(client.HTTPConfig{
@@ -65,7 +67,7 @@ func SaveToInflux(tx *types.Transaction) {
 	defer c.Close()
 
 	bp, err2 := client.NewBatchPoints(client.BatchPointsConfig{
-		Database:  os.Getenv("GETH_METRICS_INFLUXDB_DATABASE"),
+		Database: os.Getenv("GETH_METRICS_INFLUXDB_DATABASE"),
 		Precision: "s",
 	})
 
@@ -94,4 +96,47 @@ func SaveToInflux(tx *types.Transaction) {
 	if err := c.Write(bp); err != nil {
 		log.Error("Failed to write batch points to InfluxDB", "err", err)
 	}
+
+	q := client.NewQuery("SELECT * FROM transaction_metrics", os.Getenv("GETH_METRICS_INFLUXDB_DATABASE"), "")
+	
+	if response, err := c.Query(q); err == nil && response.Error() == nil {
+		file, err := os.Create("output.csv")
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		writer := csv.NewWriter(file)
+		defer writer.Flush()
+
+		writer.Write([]string{"timestamp", "recorded_at", "tx_id"})
+
+		for _, res := range response.Results {
+			for _, series := range res.Series {
+				for _, row := range series.Values {
+					if len(row) < 2 {
+						continue
+					}
+					timeVal, ok := row[0].(string)
+					if !ok {
+						fmt.Println("Error: Unable to convert _time to string")
+						continue
+					}
+					value, ok := row[1].(json.Number)
+					if !ok {
+						fmt.Println("Error: Unable to convert _value to string")
+						continue
+					}
+
+					value2, ok := row[2].(string)
+					if !ok {
+						fmt.Println("Error: Unable to convert _value to string")
+						continue
+					}
+					writer.Write([]string{timeVal, string(value), string(value2)}) // Modify the row based on your data schema
+				}
+			}
+		}
+	}
+
 }
